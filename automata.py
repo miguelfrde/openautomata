@@ -79,6 +79,7 @@ class DFA(Automata):
 
     @check_alphabet
     def get_transition(self, state, symbol):
+        "Returns the transition D(set_state_or_state, symbol)"
         # state = [s0, s1, s2, ...] or s0
         if isinstance(state, int):
             return self.transition[state, symbol]
@@ -104,7 +105,7 @@ class NFA(Automata):
         return reduce(set.union, r)
 
     def get_transition(self, state, symbol):
-        "Returns the extended transition D(set_state, symbol)"
+        "Returns the extended transition D(set_state_or_state, symbol)"
         # state = [s0, s1, s2, ...] or s0
         if isinstance(state, int):
             return self.single_transition(state, symbol)
@@ -141,7 +142,7 @@ if __name__ == '__main__':
     closures = [nfa.epsilon_closure(s) for s in xrange(5)]
     for c in closures:
         print c, nfa.get_transition(c, 'a'), nfa.get_transition(c, 'b')
-    # (+|-|\.)?[0-9]*(\.[0-9]|[0-9]\.)[0-9]*
+    # (\+|-)?[0-9]*(\.[0-9]|[0-9]\.)[0-9]*
     nfa = NFA(['+', '-', '.'] + map(str, range(10)))
     nfa.set_initial(0)
     nfa.add_final(5)
