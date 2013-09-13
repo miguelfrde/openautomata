@@ -31,7 +31,7 @@ class Automata:
         self.states = set()
         self.final_states = set()
         self.initial_state = None
-        self.alphabet = alphabet
+        self.alphabet = set(alphabet)
 
     def set_initial(self, state):
         "Sets the initial state of the automata"
@@ -90,7 +90,7 @@ class NFA(Automata):
 
     def __init__(self, alphabet):
         Automata.__init__(self, alphabet)
-        self.alphabet = alphabet + [EPSILON]
+        self.alphabet.add(EPSILON)
 
     @check_alphabet
     def single_transition(self, state, symbol):
@@ -164,4 +164,3 @@ if __name__ == '__main__':
                    for n in xrange(10)])
         assert nfa.get_transition(c, '+') == nfa.get_transition(c, '-')
     c = {1, 4}
-    print nfa.get_transition(c, '+'), nfa.get_transition(c, '0'), nfa.get_transition(c, '.')
