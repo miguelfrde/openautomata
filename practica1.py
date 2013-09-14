@@ -35,12 +35,12 @@ def parse_args():
 
 def use_re(regex, text):
     """Use this method to test if the output of find(r,t) is correct"""
-    p = re.compile(regex.replace(',', '|'))
-    m = p.search(text)
-    return m.group(), m.span()
+    regex = regex.replace(',', '|')
+    found = re.finditer(regex, text)
+    return [(x.start(), x.end(), x.group()) for x in found]
 
 
 if __name__ == '__main__':
     regex, text = parse_args()
-    found, positions = use_re(regex, text)
-    print "Found:", found, "between", positions
+    found = use_re(regex, text)
+    print found
