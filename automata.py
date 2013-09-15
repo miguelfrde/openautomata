@@ -4,6 +4,7 @@ from collections import defaultdict
 from functools import wraps
 
 EPSILON = '€'
+SYMBOLS = (')', '(', OR)
 
 
 class SymbolNotInAlphabetError(Exception):
@@ -125,6 +126,37 @@ class NFA(Automata):
                 if s2 not in result:
                     result = self.epsilon_closure(s2, result)
         return result
+
+
+
+class RegularExpression:
+
+    def __init__(self, regex_str):
+        self.regex = regex_str
+        self.nfa = None
+        self.nfa = self.get_nfa()
+
+    def get_nfa(self):
+        if self.nfa: return self.nfa
+        alphabet = set(c for c in self.regex if c not in SYMBOLS)
+        nfa = NFA(alphabet)
+        nfa.set_initial(0)
+        nfa.add_final(len(self.regex))
+        # To Do - Thompson's algorithm
+        return nfa
+
+    def __str__(self):
+        return self.regex
+
+    def matches(self, text):
+        state = nfa.initial_state
+        for i, letter in enumerate(text):
+            try:
+                state = nfa.get_transition(state, letter)
+            except SymbolNotInAlphabetError:
+                return (False, i)
+        result = any(map(lambda s: s in state, (f for f in nfa.final_states)))
+        return (result, len(text))
 
 
 # Show examples from class
