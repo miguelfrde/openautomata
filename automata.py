@@ -2,8 +2,10 @@
 
 from collections import defaultdict
 from functools import wraps
+from jinja2 import Environment, FileSystemLoader
 
 EPSILON = '€'
+OR      = ','
 SYMBOLS = (')', '(', OR)
 
 
@@ -74,6 +76,13 @@ class Automata:
     def is_initial(self, state):
         "Checks wether an state is initial"
         return state == self.initial_state
+
+    def get_transition_html(self):
+        env = Environment(loader=FileSystemLoader('.'))
+        template = env.get_template('transition_table.html')
+        return template.render( alphabet = sorted(self.alphabet - {EPSILON}),
+                                states   = sorted(self.states),
+                                transition = self.get_transition)
 
 
 class DFA(Automata):
@@ -174,6 +183,8 @@ if __name__ == '__main__':
     closures = [nfa.epsilon_closure(s) for s in xrange(5)]
     for c in closures:
         print c, nfa.get_transition(c, 'a'), nfa.get_transition(c, 'b')
+    with open('res1.html', 'w') as f:
+        f.write(nfa.get_transition_html())
     # (\+|-)?[0-9]*(\.[0-9]|[0-9]\.)[0-9]*
     nfa = NFA(['+', '-', '.'] + map(str, range(10)))
     nfa.set_initial(0)
@@ -195,4 +206,5 @@ if __name__ == '__main__':
         assert all([nfa.get_transition(c, '0') == nfa.get_transition(c, str(n))
                    for n in xrange(10)])
         assert nfa.get_transition(c, '+') == nfa.get_transition(c, '-')
-    c = {1, 4}
+    with open('res2.html', 'w') as f:
+        f.write(nfa.get_transition_html())

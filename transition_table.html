@@ -1,0 +1,21 @@
+
+<table id="transition-function">
+	<tr>
+		<th>&Delta;</th>
+		{% for symbol in alphabet %}
+			<th>{{symbol}}</th>
+		{% endfor %}
+	</tr>
+	{% for state in states %}
+		<tr>
+			<td>q<sub>{{state}}</sub></td>
+			{% for symbol in alphabet %}
+				{% if transition(state, symbol) %}
+					<td>&#123;q<sub>{{ transition(state, symbol)|join('</sub>, q<sub>') }}</sub>&#125;</td>
+				{% else %}
+					<td>&#8709;</td>
+				{% endif %}
+			{% endfor %}
+		</tr>
+	{% endfor  %}
+</table>
