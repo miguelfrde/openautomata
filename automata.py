@@ -153,7 +153,7 @@ class RegularExpression:
         nfa.add_final(len(self.regex))
         stack = []
 
-        for i in range(len(self.regex)):
+        for i in xrange(len(self.regex)):
             if self.regex[i] in alphabet:
                 nfa.add_transition(i, i + 1, self.regex[i])
             elif self.regex[i] == '(':
@@ -163,13 +163,12 @@ class RegularExpression:
                 nfa.add_transition(i, i + 1, EPSILON)
                 ind = stack.pop()
                 tmplist = []
-
-                "Adds a transition between every or and the closing parenthesis"
+                # Adds a transition between every or and the closing parenthesis
                 while (self.regex[ind] == OR):
                     tmplist.append(ind)
                     nfa.add_transition(ind, i, EPSILON)
                     ind = stack.pop()
-                "Adds a transition between the opening parenthesis and every or"
+                # Adds a transition between the opening parenthesis and every or
                 for n in tmplist:
                     nfa.add_transition(ind, n + 1, EPSILON)                    
             elif self.regex[i] == OR:
@@ -181,19 +180,19 @@ class RegularExpression:
         return self.regex
 
     def matches(self, text):
-        state = nfa.initial_state
+        state = self.nfa.initial_state
         for i, letter in enumerate(text):
             try:
-                state = nfa.get_transition(state, letter)
+                state = self.nfa.get_transition(state, letter)
             except SymbolNotInAlphabetError:
                 return (False, i)
-        result = any(map(lambda s: s in state, (f for f in nfa.final_states)))
+        result = any(map(lambda s: s in state, (f for f in self.nfa.final_states)))
         return (result, len(text))
 
 
 # Show examples from class
 if __name__ == '__main__':
-    # (abb)*(ab)?
+     # (abb)*(ab)?
     nfa = NFA(['a', 'b'])
     nfa.set_initial(0)
     nfa.add_final(2)
@@ -208,6 +207,7 @@ if __name__ == '__main__':
         print c, nfa.get_transition(c, 'a'), nfa.get_transition(c, 'b')
     with open('res1.html', 'w') as f:
         f.write(nfa.get_transition_html())
+    
     # (\+|-)?[0-9]*(\.[0-9]|[0-9]\.)[0-9]*
     nfa = NFA(['+', '-', '.'] + map(str, range(10)))
     nfa.set_initial(0)
@@ -231,3 +231,13 @@ if __name__ == '__main__':
         assert nfa.get_transition(c, '+') == nfa.get_transition(c, '-')
     with open('res2.html', 'w') as f:
         f.write(nfa.get_transition_html())
+
+    r = RegularExpression('(a,b,c,d)')
+    r2 = RegularExpression('a,b,c,d')
+    with open('res.html', 'w') as f:
+        f.write('(a,b,c,d)')
+        f.write(r.nfa.get_transition_html())
+        f.write('a,b,c,d')
+        f.write(r2.nfa.get_transition_html())
+    print all(r.matches(c) == r2.matches(c) for c in ('a', 'b', 'c', 'd'))
+
