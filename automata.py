@@ -121,7 +121,7 @@ class NFA(Automata):
             return self.single_transition(state, symbol)
         if len(state) == 1:
             return self.single_transition(list(state)[0], symbol)
-        r = [self.single_transition(s, symbol)for s in state]
+        r = [self.single_transition(s, symbol) for s in state]
         if len(r) == 0:
             return set()
         return reduce(set.union, r)
@@ -141,7 +141,7 @@ class NFA(Automata):
 class RegularExpression:
 
     def __init__(self, regex_str):
-        self.regex = regex_str
+        self.regex = '(' + regex_str + ')'
         self.nfa = None
         self.nfa = self.get_nfa()
 
@@ -151,7 +151,30 @@ class RegularExpression:
         nfa = NFA(alphabet)
         nfa.set_initial(0)
         nfa.add_final(len(self.regex))
-        # To Do - Thompson's algorithm
+        stack = []
+
+        for i in range(len(self.regex)):
+            if self.regex[i] in alphabet:
+                nfa.add_transition(i, i + 1, self.regex[i])
+            elif self.regex[i] == '(':
+                nfa.add_transition(i, i + 1, EPSILON)
+                stack.append(i)
+            elif self.regex[i] == ')':
+                nfa.add_transition(i, i + 1, EPSILON)
+                ind = stack.pop()
+                tmplist = []
+
+                "Adds a transition between every or and the closing parenthesis"
+                while (self.regex[ind] == OR):
+                    tmplist.append(ind)
+                    nfa.add_transition(ind, i, EPSILON)
+                    ind = stack.pop()
+                "Adds a transition between the opening parenthesis and every or"
+                for n in tmplist:
+                    nfa.add_transition(ind, n + 1, EPSILON)                    
+            elif self.regex[i] == OR:
+                stack.append(i)
+                
         return nfa
 
     def __str__(self):
