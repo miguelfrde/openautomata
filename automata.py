@@ -4,7 +4,7 @@ from collections import defaultdict
 from functools import wraps
 from jinja2 import Environment, FileSystemLoader
 
-EPSILON = '€'
+EPSILON = u'€'
 OR      = ','
 SYMBOLS = (')', '(', OR)
 
@@ -88,9 +88,9 @@ class Automata:
     def get_transition_html(self):
         env = Environment(loader=FileSystemLoader('.'))
         template = env.get_template('transition_table.html')
-        return template.render( alphabet = sorted(self.alphabet - {EPSILON}),
+        return template.render( alphabet = sorted(self.alphabet),
                                 states   = sorted(self.states),
-                                transition = self.get_transition)
+                                transition = self.transition)
 
     def contains_final(self, state):
         return any(map(lambda s: s in state, self.final_states))
@@ -223,3 +223,5 @@ class RegularExpression:
 if __name__ == '__main__':
     r = RegularExpression("s(ala,alas)")
     print r.search("en las salas")
+    with open('res.html', 'w') as f:
+        f.write(r.nfa.get_transition_html())
