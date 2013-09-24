@@ -92,6 +92,9 @@ class Automata:
                                 states   = sorted(self.states),
                                 transition = self.get_transition)
 
+    def contains_final(self, state):
+        return any(map(lambda s: s in state, self.final_states))
+
 
 class DFA(Automata):
 
@@ -202,24 +205,21 @@ class RegularExpression:
     def search(self, text):
         i = 0
         result = list()
-        while i < len(text):
+        for i in xrange(len(text)):
             state = self.nfa.epsilon_closure(self.nfa.initial_state)
             offset = 0
             while True:
                 try:
                     state = self.nfa.get_transition(state, text[i + offset])
-                    if any(map(lambda s: s in state, (f for f in self.nfa.final_states))):
+                    if self.nfa.contains_final(state):
                         result.append((i, i+offset, text[i: i + offset + 1]))
-                        i += offset + 1
-                        break
                     offset += 1
                 except (SymbolNotInAlphabetError, IndexError) as e:
-                    i += 1
                     break
         return result
 
 
 # Show examples from class
 if __name__ == '__main__':
-    r = RegularExpression("abcd")
-    print r.search("This is a text with abcd inside two times abcd")
+    r = RegularExpression("s(ala,alas)")
+    print r.search("en las salas")
