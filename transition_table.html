@@ -3,7 +3,7 @@
 	<tr>
 		<th>&Delta;</th>
 		{% for symbol in alphabet %}
-			<th>{{ symbol|replace("€", "&epsilon;") }}</th>
+			<th>{{ symbol|replace("&", "&epsilon;") }}</th>
 		{% endfor %}
 	</tr>
 	{% for state in states %}

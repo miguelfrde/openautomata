@@ -4,7 +4,7 @@ from collections import defaultdict
 from functools import wraps
 from jinja2 import Environment, FileSystemLoader
 
-EPSILON = u'€'
+EPSILON = '&'
 OR      = ','
 SYMBOLS = (')', '(', OR)
 
@@ -221,7 +221,8 @@ class RegularExpression:
 
 # Show examples from class
 if __name__ == '__main__':
-    r = RegularExpression("s(ala,alas)")
-    print r.search("en las salas")
+    r = RegularExpression("(a,&)x")
+    print r.search("x")
+    print r.search("ax")
     with open('res.html', 'w') as f:
         f.write(r.nfa.get_transition_html())
