@@ -108,12 +108,21 @@ class DFA(Automata):
             return self.transition[state, symbol]
         return reduce(set.union, [self.transition[s, symbol] for s in state])
 
+    @classmethod
+    def from_nfa(cls, nfa):
+        pass
+
+
+    @classmethod
+    def minimize(self):
+        pass
+
 
 class NFA(Automata):
 
-    def __init__(self, alphabet):
+    def __init__(self, alphabet, accept_void=True):
         Automata.__init__(self, alphabet)
-        self.alphabet.add(EPSILON)
+        if accept_void: self.alphabet.add(EPSILON)
 
     @check_alphabet
     def single_transition(self, state, symbol):
@@ -148,6 +157,27 @@ class NFA(Automata):
                 if s2 not in result:
                     result = self.epsilon_closure(s2, result)
         return result
+
+    def get_nfa_without_void_transitions(self):
+        nfa = NFA(self.alphabet - {EPSILON}, accept_void=False)
+        initial = frozenset(self.epsilon_closure(0))
+        states = {initial: 0}
+        to_visit = [initial]
+        next_index = 0
+        nfa.set_initial(0)
+        while to_visit:
+            state = to_visit.pop(0)
+            for symbol in nfa.alphabet:
+                next = frozenset(self.get_transition(state, symbol))
+                if next:
+                    if next not in states:
+                        next_index += 1
+                        states[next] = next_index
+                        to_visit.append(next)
+                    if self.contains_final(next):
+                        nfa.add_final(next_index)
+                    nfa.add_transition(states[state], states[next], symbol)
+        return nfa
 
 
 
@@ -231,9 +261,20 @@ class RegularExpression:
 
 # Show examples from class
 if __name__ == '__main__':
-    r = RegularExpression("a*ba+b")
-    print r.search("baaaab")
-    print r.search("aaaabb")
-    print r.search("aaaabab")
-    with open('res.html', 'w') as f:
-        f.write(r.nfa.get_transition_html())
+    nfa = NFA({'a', 'b', 'c'})
+    nfa.set_initial(0)
+    nfa.add_transition(0, 1, EPSILON)
+    nfa.add_transition(0, 2, EPSILON)
+    nfa.add_transition(0, 1, 'b')
+    nfa.add_transition(0, 2, 'c')
+    nfa.add_transition(1, 0, 'a')
+    nfa.add_transition(1, 2, 'b')
+    nfa.add_transition(1, 0, 'c')
+    nfa.add_transition(1, 1, 'c')
+    with open('res1.html', 'w') as f:
+        f.write(nfa.get_transition_html())
+    nfa = nfa.get_nfa_without_void_transitions()
+    with open('res2.html', 'w') as f:
+        f.write(nfa.get_transition_html())
+
+
