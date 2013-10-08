@@ -6,7 +6,9 @@ from jinja2 import Environment, FileSystemLoader
 
 EPSILON = '&'
 OR      = ','
-SYMBOLS = (')', '(', OR)
+CLOSURE = '*'
+POS_CLOSURE = '+'
+SYMBOLS = (')', '(', OR, CLOSURE, POS_CLOSURE)
 
 
 class SymbolNotInAlphabetError(Exception):
@@ -165,14 +167,16 @@ class RegularExpression:
         nfa.set_initial(0)
         nfa.add_final(len(self.regex))
         stack = list()
+        N = len(self.regex)
 
-        for i in xrange(len(self.regex)):
-            if self.regex[i] in alphabet:
-                nfa.add_transition(i, i + 1, self.regex[i])
-            elif self.regex[i] == '(':
+        for i, c in enumerate(self.regex):
+            ind = i
+            if c in alphabet:
+                nfa.add_transition(i, i + 1, c)
+            elif c == '(':
                 nfa.add_transition(i, i + 1, EPSILON)
                 stack.append(i)
-            elif self.regex[i] == ')':
+            elif c == ')':
                 nfa.add_transition(i, i + 1, EPSILON)
                 ind = stack.pop()
                 tmplist = list()
@@ -184,9 +188,15 @@ class RegularExpression:
                 # Adds a transition between the opening parenthesis and every or
                 for n in tmplist:
                     nfa.add_transition(ind, n + 1, EPSILON)                    
-            elif self.regex[i] == OR:
+            elif c == OR:
                 stack.append(i)
-                
+            elif c in (CLOSURE, POS_CLOSURE):
+                nfa.add_transition(i, i + 1, EPSILON)
+            if i < N - 1 and self.regex[i + 1] in (CLOSURE, POS_CLOSURE):
+                if self.regex[i + 1] == CLOSURE: 
+                    nfa.add_transition(ind, i + 1, EPSILON)
+                nfa.add_transition(i + 1, ind, EPSILON)
+        print nfa.transition       
         return nfa
 
     def __str__(self):
@@ -221,8 +231,9 @@ class RegularExpression:
 
 # Show examples from class
 if __name__ == '__main__':
-    r = RegularExpression("(a,&)x")
-    print r.search("x")
-    print r.search("ax")
+    r = RegularExpression("a*ba+b")
+    print r.search("baaaab")
+    print r.search("aaaabb")
+    print r.search("aaaabab")
     with open('res.html', 'w') as f:
         f.write(r.nfa.get_transition_html())
