@@ -110,7 +110,27 @@ class DFA(Automata):
 
     @classmethod
     def from_nfa(cls, nfa):
-        pass
+        dfa = DFA(nfa.alphabet - {EPSILON})
+        initial = frozenset(nfa.epsilon_closure(0))
+        states = {initial: 0}
+        to_visit = [initial]
+        if nfa.contains_final(initial):
+            dfa.add_final(states[initial])
+        next_index = 0
+        dfa.set_initial(0)
+        while to_visit:
+            state = to_visit.pop(0)
+            for symbol in dfa.alphabet:
+                next = frozenset(nfa.get_transition(state, symbol))
+                if next:
+                    if next not in states:
+                        next_index += 1
+                        states[next] = next_index
+                        to_visit.append(next)
+                    if nfa.contains_final(next):
+                        dfa.add_final(next_index)
+                    dfa.add_transition(states[state], states[next], symbol)
+        return dfa
 
 
     @classmethod
@@ -160,27 +180,15 @@ class NFA(Automata):
 
     def get_nfa_without_void_transitions(self):
         nfa = NFA(self.alphabet - {EPSILON}, accept_void=False)
-        initial = frozenset(self.epsilon_closure(0))
-        states = {initial: 0}
-        to_visit = [initial]
-        if self.contains_final(initial):
-            nfa.add_final(states[initial])
-        next_index = 0
-        nfa.set_initial(0)
-        while to_visit:
-            state = to_visit.pop(0)
-            for symbol in nfa.alphabet:
-                next = frozenset(self.get_transition(state, symbol))
-                if next:
-                    if next not in states:
-                        next_index += 1
-                        states[next] = next_index
-                        to_visit.append(next)
-                    if self.contains_final(next):
-                        nfa.add_final(next_index)
-                    nfa.add_transition(states[state], states[next], symbol)
+        nfa.set_initial(self.initial_state)
+        for state in self.states:
+            if self.is_final(state):
+                nfa.add_final(state)
+            map(lambda (s, a): nfa.add_transition(state, s, a),
+                ((state2, symbol)
+                for symbol in nfa.alphabet
+                for state2 in self.get_transition(state, symbol)))
         return nfa
-
 
 
 class RegularExpression:
@@ -260,16 +268,24 @@ class RegularExpression:
         return result
 
 
-# Show examples from class
 if __name__ == '__main__':
     # a,(a,b)*
-    regex = RegularExpression("a,(a,b)*")
-    with open("res1.html", 'w') as f:
-        f.write(regex.nfa.get_transition_html())
-    nfa = regex.nfa.get_nfa_without_void_transitions()
-    print nfa.final_states
-    with open("res2.html", 'w') as f:
+    nfa = NFA({'a', 'b', 'c'})
+    nfa.set_initial(0)
+    nfa.add_transition(0, 1, EPSILON)
+    nfa.add_transition(0, 2, EPSILON)
+    nfa.add_transition(0, 1, 'b')
+    nfa.add_transition(0, 2, 'c')
+    nfa.add_transition(1, 0, 'a')
+    nfa.add_transition(1, 2, 'b')
+    nfa.add_transition(1, 0, 'c')
+    nfa.add_transition(1, 1, 'c')
+    with open('res1.html', 'w') as f:
         f.write(nfa.get_transition_html())
-
-
+    dfa = DFA.from_nfa(nfa)
+    with open('res2.html', 'w') as f:
+        f.write(dfa.get_transition_html())
+    nfa = nfa.get_nfa_without_void_transitions()
+    with open('res3.html', 'w') as f:
+        f.write(nfa.get_transition_html())
 
