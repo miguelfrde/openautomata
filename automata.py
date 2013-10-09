@@ -163,6 +163,8 @@ class NFA(Automata):
         initial = frozenset(self.epsilon_closure(0))
         states = {initial: 0}
         to_visit = [initial]
+        if self.contains_final(initial):
+            nfa.add_final(states[initial])
         next_index = 0
         nfa.set_initial(0)
         while to_visit:
@@ -225,8 +227,7 @@ class RegularExpression:
             if i < N - 1 and self.regex[i + 1] in (CLOSURE, POS_CLOSURE):
                 if self.regex[i + 1] == CLOSURE: 
                     nfa.add_transition(ind, i + 1, EPSILON)
-                nfa.add_transition(i + 1, ind, EPSILON)
-        print nfa.transition       
+                nfa.add_transition(i + 1, ind, EPSILON)      
         return nfa
 
     def __str__(self):
@@ -261,20 +262,14 @@ class RegularExpression:
 
 # Show examples from class
 if __name__ == '__main__':
-    nfa = NFA({'a', 'b', 'c'})
-    nfa.set_initial(0)
-    nfa.add_transition(0, 1, EPSILON)
-    nfa.add_transition(0, 2, EPSILON)
-    nfa.add_transition(0, 1, 'b')
-    nfa.add_transition(0, 2, 'c')
-    nfa.add_transition(1, 0, 'a')
-    nfa.add_transition(1, 2, 'b')
-    nfa.add_transition(1, 0, 'c')
-    nfa.add_transition(1, 1, 'c')
-    with open('res1.html', 'w') as f:
+    # a,(a,b)*
+    regex = RegularExpression("a,(a,b)*")
+    with open("res1.html", 'w') as f:
+        f.write(regex.nfa.get_transition_html())
+    nfa = regex.nfa.get_nfa_without_void_transitions()
+    print nfa.final_states
+    with open("res2.html", 'w') as f:
         f.write(nfa.get_transition_html())
-    nfa = nfa.get_nfa_without_void_transitions()
-    with open('res2.html', 'w') as f:
-        f.write(nfa.get_transition_html())
+
 
 
