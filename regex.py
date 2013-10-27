@@ -1,6 +1,11 @@
 
-from automata import NFA
+from automata import *
+import time
 
+OR      = ','
+CLOSURE = '*'
+POS_CLOSURE = '+'
+SYMBOLS = (')', '(', OR, CLOSURE, POS_CLOSURE)
 
 def balanced_parenthesis(txt):
     count = 0
@@ -18,10 +23,13 @@ class RegularExpression:
             raise Exception("Parenthesis not balanced.")
         self.regex = '(' + regex_str + ')'
         self.nfa = None
-        self.nfa = self.get_nfa()
+        self.dfa = DFA.from_nfa(self.__get_nfa())
+        self.dfa.minimize()
 
-    def get_nfa(self):
-        if self.nfa: return self.nfa
+    def get_dfa(self):
+        return self.dfa
+
+    def __get_nfa(self):
         alphabet = set(c for c in self.regex if c not in SYMBOLS)
         nfa = NFA(alphabet)
         nfa.set_initial(0)
@@ -62,31 +70,39 @@ class RegularExpression:
         return self.regex
 
     def matches(self, text):
-        state = self.nfa.initial_state
+        state = self.dfa.initial_state
         for i, letter in enumerate(text):
             try:
-                state = self.nfa.get_transition(state, letter)
+                state = self.dfa.get_transition(state, letter)
             except SymbolNotInAlphabetError:
                 return (False, i)
-        result = any(map(lambda s: s in state, (f for f in self.nfa.final_states)))
+        result = any(map(lambda s: s in state, (f for f in self.dfa.final_states)))
         return (result, len(text))
 
     def search(self, text):
-        i = 0
+        current_states = list()
         result = list()
-        for i in xrange(len(text)):
-            state = self.nfa.epsilon_closure(self.nfa.initial_state)
-            offset = 0
-            while True:
+        for i, c in enumerate(text):
+            current_states.append((i, {self.dfa.initial_state}))
+            new_states = list()
+            for initial, s in current_states:
                 try:
-                    state = self.nfa.get_transition(state, text[i + offset])
-                    if self.nfa.contains_final(state):
-                        result.append((i, i+offset, text[i: i + offset + 1]))
-                    offset += 1
-                except (SymbolNotInAlphabetError, IndexError) as e:
-                    break
+                    t = self.dfa.get_transition(s, c)
+                    if not t: continue
+                    if self.dfa.contains_final(t):
+                        result.append((initial, i))
+                    new_states.append((initial, t))
+                except SymbolNotInAlphabetError:
+                    pass
+            current_states = new_states
         return result
 
 
 if __name__ == '__main__':
-	pass
+    regex = "a*"
+    r = RegularExpression(regex)
+    t0 = time.time()
+    r.search("a" * 1000)
+    print time.time() - t0
+    with open("res.html", "w") as f:
+        f.write(r.dfa.get_transition_html())

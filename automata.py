@@ -3,13 +3,9 @@
 from collections import defaultdict
 from functools import wraps
 from jinja2 import Environment, FileSystemLoader
+import copy
 
 EPSILON = '&'
-OR      = ','
-CLOSURE = '*'
-POS_CLOSURE = '+'
-SYMBOLS = (')', '(', OR, CLOSURE, POS_CLOSURE)
-
 
 class SymbolNotInAlphabetError(Exception):
 
@@ -84,10 +80,15 @@ class Automata:
         template = env.get_template('transition_table.html')
         return template.render( alphabet = sorted(self.alphabet),
                                 states   = sorted(self.states),
-                                transition = self.transition)
+                                transition = self.transition,
+                                final_states = self.final_states,
+                                initial = self.initial_state)
 
     def contains_final(self, state):
         return any(map(lambda s: s in state, self.final_states))
+
+    def contains_initial(self, state):
+        return any(map(lambda s: s == self.initial_state, state))
 
 
 class DFA(Automata):
@@ -124,10 +125,68 @@ class DFA(Automata):
                     dfa.add_transition(states[state], states[next], symbol)
         return dfa
 
-
-    @classmethod
     def minimize(self):
-        pass
+        # Remove non reachable states
+        non_reachable = self.non_reachable()
+        self.states = self.states - non_reachable
+        self.final_states = self.final_states - non_reachable
+        self.transition = {(s, a): self.transition[s, a]
+                            for s, a in self.transition if s not in non_reachable}
+        # Fill table
+        table = {(s1, s2): (s1 in self.final_states) != (s2 in self.final_states) 
+                            for i, s1 in enumerate(self.states)
+                            for j, s2 in enumerate(self.states)
+                            if i < j}
+        distinguishable = lambda x, y: table[min(x,y), max(x,y)]
+        has_transition = lambda s, a: (s, a) in self.transition
+        changed = True
+        while changed:
+            changed = False
+            for p, q in table:
+                if table[p, q]: continue
+                for a in self.alphabet:
+                    if not has_transition(p, a) or not has_transition(q, a):
+                        continue
+                    r, s = self.transition[p, a], self.transition[q, a]
+                    if r == s: continue
+                    r, s = list(r)[0], list(s)[0]
+                    if distinguishable(r, s):
+                        table[p, q] = changed = True
+        equivalences = {s: {s} for s in self.states}
+        # Find equivalent subsets
+        for states in filter(lambda x: table[x] == False, table): 
+            for s1 in states:
+                for s2 in states:
+                    equivalences[s1].add(s2)
+        states_map = {frozenset(s): min(s) for s in equivalences.values()}
+        # Update self.transition, self.states, self.initial_states, etc.
+        dfa = DFA(self.alphabet)
+        for old_states_set, new_state in states_map.items():
+            if self.contains_initial(old_states_set):
+                dfa.set_initial(new_state)
+            if self.contains_final(old_states_set):
+                dfa.add_final(new_state)
+            for old_state in old_states_set:
+                for a in (a for s, a in self.transition if s == old_state):
+                    to = equivalences[self.get_transition(old_state, a).pop()]
+                    dfa.add_transition(new_state, states_map[frozenset(to)], a)
+        self.states = dfa.states
+        self.transition = dfa.transition
+        self.initial_state = dfa.initial_state
+        self.final_states = dfa.final_states
+
+    def non_reachable(self):
+        non_visited = self.states.copy()
+        transition = copy.deepcopy(self.transition)
+        def f(s):
+            non_visited.remove(s)
+            transitions = filter(lambda (k, a): k == s, transition)
+            for k, a in transitions:
+                t = transition[k, a].pop()
+                if t in non_visited:
+                    f(t)
+        f(self.initial_state)
+        return non_visited
 
 
 class NFA(Automata):
@@ -184,22 +243,26 @@ class NFA(Automata):
 
 
 if __name__ == '__main__':
-    nfa = NFA({'a', 'b', 'c'})
-    nfa.set_initial(0)
-    nfa.add_transition(0, 1, EPSILON)
-    nfa.add_transition(0, 2, EPSILON)
-    nfa.add_transition(0, 1, 'b')
-    nfa.add_transition(0, 2, 'c')
-    nfa.add_transition(1, 0, 'a')
-    nfa.add_transition(1, 2, 'b')
-    nfa.add_transition(1, 0, 'c')
-    nfa.add_transition(1, 1, 'c')
-    with open('res1.html', 'w') as f:
-        f.write(nfa.get_transition_html())
-    dfa = DFA.from_nfa(nfa)
-    with open('res2.html', 'w') as f:
+    dfa = DFA({'0', '1'})
+    dfa.set_initial(0)
+    dfa.add_final(2)
+    dfa.add_transition(0, 1, '0')
+    dfa.add_transition(0, 5, '1')
+    dfa.add_transition(1, 2, '1')
+    dfa.add_transition(1, 6, '0')
+    dfa.add_transition(2, 0, '0')
+    dfa.add_transition(2, 2, '1')
+    dfa.add_transition(3, 2, '0')
+    dfa.add_transition(3, 7, '1')
+    dfa.add_transition(4, 5, '1')
+    dfa.add_transition(4, 7, '0')
+    dfa.add_transition(5, 2, '0')
+    dfa.add_transition(5, 6, '1')
+    dfa.add_transition(6, 4, '1')
+    dfa.add_transition(6, 6, '0')
+    dfa.add_transition(7, 2, '1')
+    dfa.add_transition(7, 6, '0')
+    print dfa.non_reachable()
+    dfa.minimize()
+    with open("res.html", 'w') as f:
         f.write(dfa.get_transition_html())
-    nfa = nfa.get_nfa_without_void_transitions()
-    with open('res3.html', 'w') as f:
-        f.write(nfa.get_transition_html())
-
