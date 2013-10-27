@@ -69,6 +69,8 @@ class Automata:
 
     def is_final(self, state):
         "Checks wether an state is final"
+        if isinstance(state, set) and len(state) == 1:
+            return list(state)[0] in self.final_states
         return state in self.final_states
 
     def is_initial(self, state):
@@ -121,7 +123,7 @@ class DFA(Automata):
                         states[next] = next_index
                         to_visit.append(next)
                     if nfa.contains_final(next):
-                        dfa.add_final(next_index)
+                        dfa.add_final(states[next])
                     dfa.add_transition(states[state], states[next], symbol)
         return dfa
 
@@ -145,7 +147,12 @@ class DFA(Automata):
             for p, q in table:
                 if table[p, q]: continue
                 for a in self.alphabet:
-                    if not has_transition(p, a) or not has_transition(q, a):
+                    if not has_transition(p, a) and not has_transition(q, a):
+                        continue
+                    if has_transition(p, a) != has_transition(q, a) and (
+                        (has_transition(p, a) and self.is_final(self.transition[p, a])) or \
+                        (has_transition(q, a) and self.is_final(self.transition[q, a]))):
+                        table[p, q] = changed = True
                         continue
                     r, s = self.transition[p, a], self.transition[q, a]
                     if r == s: continue

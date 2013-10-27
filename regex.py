@@ -1,6 +1,6 @@
 
 from automata import *
-import time
+from collections import defaultdict
 
 OR      = ','
 CLOSURE = '*'
@@ -33,7 +33,7 @@ class RegularExpression:
         alphabet = set(c for c in self.regex if c not in SYMBOLS)
         nfa = NFA(alphabet)
         nfa.set_initial(0)
-        nfa.add_final(len(self.regex))
+        nfa.add_final(len(self.regex) - 1)
         stack = list()
         N = len(self.regex)
 
@@ -63,7 +63,10 @@ class RegularExpression:
             if i < N - 1 and self.regex[i + 1] in (CLOSURE, POS_CLOSURE):
                 if self.regex[i + 1] == CLOSURE: 
                     nfa.add_transition(ind, i + 1, EPSILON)
-                nfa.add_transition(i + 1, ind, EPSILON)      
+                nfa.add_transition(i + 1, ind, EPSILON)
+        nfa.states.remove(N)
+        nfa.transition = defaultdict(set, [(k, v) for k, v in nfa.transition.iteritems()
+                            if N not in v])
         return nfa
 
     def __str__(self):
@@ -85,24 +88,20 @@ class RegularExpression:
         for i, c in enumerate(text):
             current_states.append((i, {self.dfa.initial_state}))
             new_states = list()
-            for initial, s in current_states:
-                try:
+            if c in self.dfa.alphabet:
+                for initial, s in current_states:
                     t = self.dfa.get_transition(s, c)
                     if not t: continue
                     if self.dfa.contains_final(t):
                         result.append((initial, i))
                     new_states.append((initial, t))
-                except SymbolNotInAlphabetError:
-                    pass
             current_states = new_states
         return result
 
 
 if __name__ == '__main__':
-    regex = "a*"
+    regex = "(a,b)+(cd)*"
     r = RegularExpression(regex)
-    t0 = time.time()
-    r.search("a" * 1000)
-    print time.time() - t0
     with open("res.html", "w") as f:
         f.write(r.dfa.get_transition_html())
+    print r.search("abcd")
