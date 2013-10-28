@@ -93,7 +93,7 @@ class RegularExpression:
                     t = self.dfa.get_transition(s, c)
                     if not t: continue
                     if self.dfa.contains_final(t):
-                        result.append((initial, i))
+                        result.append((initial, i, text[initial:i+1]))
                     new_states.append((initial, t))
             current_states = new_states
         return result
