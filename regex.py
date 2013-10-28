@@ -100,8 +100,9 @@ class RegularExpression:
 
 
 if __name__ == '__main__':
-    regex = "(a,b)+(cd)*"
+    regex = "a*"
+    text = "abracadabramandra"
     r = RegularExpression(regex)
-    with open("res.html", "w") as f:
-        f.write(r.dfa.get_transition_html())
-    print r.search("abcd")
+    coords = r.search(text)
+    for coord in coords:
+        print coord, text[coord[0]:coord[1]+1]

@@ -92,6 +92,9 @@ class Automata:
     def contains_initial(self, state):
         return any(map(lambda s: s == self.initial_state, state))
 
+    def has_transition_with(self, state, symbol):
+        return (state, symbol) in self.transition
+
 
 class DFA(Automata):
 
@@ -132,33 +135,28 @@ class DFA(Automata):
         non_reachable = self.non_reachable()
         self.states = self.states - non_reachable
         self.final_states = self.final_states - non_reachable
-        self.transition = {(s, a): self.transition[s, a]
-                            for s, a in self.transition if s not in non_reachable}
+        self.transition = defaultdict(set, [((s, a), self.transition[s, a])
+                            for s, a in self.transition if s not in non_reachable])
+        # Add error_state
+        self.add_error_state()
         # Fill table
-        table = {(s1, s2): (s1 in self.final_states) != (s2 in self.final_states) 
+        table = {(min(s1, s2), max(s1, s2)): (s1 in self.final_states) != (s2 in self.final_states) 
                             for i, s1 in enumerate(self.states)
                             for j, s2 in enumerate(self.states)
                             if i < j}
         distinguishable = lambda x, y: table[min(x,y), max(x,y)]
-        has_transition = lambda s, a: (s, a) in self.transition
         changed = True
         while changed:
             changed = False
             for p, q in table:
                 if table[p, q]: continue
                 for a in self.alphabet:
-                    if not has_transition(p, a) and not has_transition(q, a):
-                        continue
-                    if has_transition(p, a) != has_transition(q, a) and (
-                        (has_transition(p, a) and self.is_final(self.transition[p, a])) or \
-                        (has_transition(q, a) and self.is_final(self.transition[q, a]))):
-                        table[p, q] = changed = True
-                        continue
                     r, s = self.transition[p, a], self.transition[q, a]
-                    if r == s: continue
                     r, s = list(r)[0], list(s)[0]
+                    if r == s: continue
                     if distinguishable(r, s):
                         table[p, q] = changed = True
+                        break
         equivalences = {s: {s} for s in self.states}
         # Find equivalent subsets
         for states in filter(lambda x: table[x] == False, table): 
@@ -181,6 +179,7 @@ class DFA(Automata):
         self.transition = dfa.transition
         self.initial_state = dfa.initial_state
         self.final_states = dfa.final_states
+        self.remove_error_state()
 
     def non_reachable(self):
         non_visited = self.states.copy()
@@ -194,6 +193,23 @@ class DFA(Automata):
                     f(t)
         f(self.initial_state)
         return non_visited
+
+    def add_error_state(self, error_state=-1):
+        self.states.add(error_state)
+        for state in self.states:
+            for symbol in self.alphabet:
+                if not self.has_transition_with(state, symbol):
+                    self.add_transition(state, error_state, symbol)
+
+    def remove_error_state(self, error_state=-1):
+        self.states.remove(error_state)
+        transition = defaultdict(set)
+        for t in self.transition:
+            if -1 in self.transition[t]:
+                self.transition[t].remove(-1)
+            if t[0] != -1 and self.transition[t]:
+                transition[t] = self.transition[t]
+        self.transition = transition
 
 
 class NFA(Automata):
