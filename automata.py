@@ -78,6 +78,7 @@ class Automata:
         return state == self.initial_state
 
     def get_transition_html(self):
+        "Returns an html table of the transition function"
         env = Environment(loader=FileSystemLoader('.'))
         template = env.get_template('transition_table.html')
         return template.render( alphabet = sorted(self.alphabet),
@@ -86,13 +87,16 @@ class Automata:
                                 final_states = self.final_states,
                                 initial = self.initial_state)
 
-    def contains_final(self, state):
+    def contains_final(self, states):
+        "Check if any state in states is a final state"
         return any(map(lambda s: s in state, self.final_states))
 
-    def contains_initial(self, state):
+    def contains_initial(self, states):
+        "Check if any state in states is an initial state"
         return any(map(lambda s: s == self.initial_state, state))
 
     def has_transition_with(self, state, symbol):
+        "Check if the transition d(state, symbol) is defined"
         return (state, symbol) in self.transition
 
 
@@ -108,6 +112,7 @@ class DFA(Automata):
 
     @classmethod
     def from_nfa(cls, nfa):
+        "Build a DFA from a NFA"
         dfa = DFA(nfa.alphabet - {EPSILON})
         initial = frozenset(nfa.epsilon_closure(0))
         states = {initial: 0}
@@ -131,6 +136,7 @@ class DFA(Automata):
         return dfa
 
     def minimize(self):
+        "Minimize the DFA using the Table Filling Algorithm"
         # Remove non reachable states
         non_reachable = self.non_reachable()
         self.states = self.states - non_reachable
@@ -179,9 +185,10 @@ class DFA(Automata):
         self.transition = dfa.transition
         self.initial_state = dfa.initial_state
         self.final_states = dfa.final_states
-        self.remove_error_state()
+        self.remove_state()
 
     def non_reachable(self):
+        "Return the set of the non reachable states"
         non_visited = self.states.copy()
         transition = copy.deepcopy(self.transition)
         def f(s):
@@ -195,13 +202,17 @@ class DFA(Automata):
         return non_visited
 
     def add_error_state(self, error_state=-1):
+        """Add an error state to the automata, where every non defined trans.
+           All non defined transitions on the alphabet will go here"""
         self.states.add(error_state)
         for state in self.states:
             for symbol in self.alphabet:
                 if not self.has_transition_with(state, symbol):
                     self.add_transition(state, error_state, symbol)
 
-    def remove_error_state(self, error_state=-1):
+    def remove_state(self, state=-1):
+        """Remove and state and delete all transitions involving it,
+           Default: error state"""
         self.states.remove(error_state)
         transition = defaultdict(set)
         for t in self.transition:
@@ -251,18 +262,6 @@ class NFA(Automata):
                 if s2 not in result:
                     result = self.epsilon_closure(s2, result)
         return result
-
-    def get_nfa_without_void_transitions(self):
-        nfa = NFA(self.alphabet - {EPSILON}, accept_void=False)
-        nfa.set_initial(self.initial_state)
-        for state in self.states:
-            if self.is_final(state):
-                nfa.add_final(state)
-            map(lambda (s, a): nfa.add_transition(state, s, a),
-                ((state2, symbol)
-                for symbol in nfa.alphabet
-                for state2 in self.get_transition(state, symbol)))
-        return nfa
 
 
 if __name__ == '__main__':

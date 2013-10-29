@@ -26,10 +26,8 @@ class RegularExpression:
         self.dfa = DFA.from_nfa(self.__get_nfa())
         self.dfa.minimize()
 
-    def get_dfa(self):
-        return self.dfa
-
     def __get_nfa(self):
+        "Regular Expression to NFA"
         alphabet = set(c for c in self.regex if c not in SYMBOLS)
         nfa = NFA(alphabet)
         nfa.set_initial(0)
@@ -73,6 +71,7 @@ class RegularExpression:
         return self.regex
 
     def matches(self, text):
+        "Match the regular expression against the text"
         state = self.dfa.initial_state
         for i, letter in enumerate(text):
             try:
@@ -83,6 +82,7 @@ class RegularExpression:
         return (result, len(text))
 
     def search(self, text):
+        "Search for all matches of a regular expression in a text"
         current_states = list()
         result = list()
         for i, c in enumerate(text):
@@ -100,9 +100,4 @@ class RegularExpression:
 
 
 if __name__ == '__main__':
-    regex = "a*"
-    text = "abracadabramandra"
-    r = RegularExpression(regex)
-    coords = r.search(text)
-    for coord in coords:
-        print coord, text[coord[0]:coord[1]+1]
+    pass
