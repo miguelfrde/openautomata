@@ -2,7 +2,7 @@
 from automata import *
 from collections import defaultdict
 
-OR      = ','
+OR      = '|'
 CLOSURE = '*'
 POS_CLOSURE = '+'
 SYMBOLS = (')', '(', OR, CLOSURE, POS_CLOSURE)
