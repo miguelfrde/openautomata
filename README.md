@@ -16,6 +16,7 @@ Python automata theory library. The goal of this project is to collect algorithm
 
 ##To do
 
+- Automaton to regex
 - Push-down automata
 - And more!
 
