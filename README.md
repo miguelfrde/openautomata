@@ -22,3 +22,5 @@ Python automata theory library. The goal of this project is to collect algorithm
 
 
 Feel free to add more algorithms or refactor existing ones!
+
+####Work in progress
