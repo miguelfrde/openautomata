@@ -89,11 +89,11 @@ class Automata:
 
     def contains_final(self, states):
         "Check if any state in states is a final state"
-        return any(map(lambda s: s in state, self.final_states))
+        return any(map(lambda s: s in states, self.final_states))
 
     def contains_initial(self, states):
         "Check if any state in states is an initial state"
-        return any(map(lambda s: s == self.initial_state, state))
+        return any(map(lambda s: s == self.initial_state, states))
 
     def has_transition_with(self, state, symbol):
         "Check if the transition d(state, symbol) is defined"
@@ -213,7 +213,7 @@ class DFA(Automata):
     def remove_state(self, state=-1):
         """Remove and state and delete all transitions involving it,
            Default: error state"""
-        self.states.remove(error_state)
+        self.states.remove(state)
         transition = defaultdict(set)
         for t in self.transition:
             if -1 in self.transition[t]:
@@ -267,24 +267,13 @@ class NFA(Automata):
 if __name__ == '__main__':
     dfa = DFA({'0', '1'})
     dfa.set_initial(0)
-    dfa.add_final(2)
+    dfa.add_final(3)
     dfa.add_transition(0, 1, '0')
-    dfa.add_transition(0, 5, '1')
-    dfa.add_transition(1, 2, '1')
-    dfa.add_transition(1, 6, '0')
-    dfa.add_transition(2, 0, '0')
-    dfa.add_transition(2, 2, '1')
-    dfa.add_transition(3, 2, '0')
-    dfa.add_transition(3, 7, '1')
-    dfa.add_transition(4, 5, '1')
-    dfa.add_transition(4, 7, '0')
-    dfa.add_transition(5, 2, '0')
-    dfa.add_transition(5, 6, '1')
-    dfa.add_transition(6, 4, '1')
-    dfa.add_transition(6, 6, '0')
-    dfa.add_transition(7, 2, '1')
-    dfa.add_transition(7, 6, '0')
-    print dfa.non_reachable()
+    dfa.add_transition(0, 2, '1')
+    dfa.add_transition(1, 3, '1')
+    dfa.add_transition(2, 3, '0')
+    dfa.add_transition(3, 1, '1')
+    dfa.add_transition(3, 0, '0')
     dfa.minimize()
     with open("res.html", 'w') as f:
         f.write(dfa.get_transition_html())
