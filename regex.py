@@ -92,12 +92,12 @@ class RegularExpression:
                 for initial, s in current_states:
                     t = self.dfa.get_transition(s, c)
                     if not t: continue
-                    if self.dfa.contains_final(t):
-                        result.append((initial, i, text[initial:i+1]))
                     new_states.append((initial, t))
+                    if self.dfa.contains_final(t):
+                        yield (initial, i, text[initial:i+1])
             current_states = new_states
-        return result
 
 
 if __name__ == '__main__':
-    pass
+    r = RegularExpression("a*")
+    print list(r.search("abaabaada"))
