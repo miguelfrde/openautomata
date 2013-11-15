@@ -5,6 +5,7 @@ from collections import defaultdict
 OR      = '|'
 CLOSURE = '*'
 POS_CLOSURE = '+'
+WILD_CARD = '.'
 SYMBOLS = (')', '(', OR, CLOSURE, POS_CLOSURE)
 
 def balanced_parenthesis(txt):
@@ -88,6 +89,15 @@ class RegularExpression:
         for i, c in enumerate(text):
             current_states.append((i, {self.dfa.initial_state}))
             new_states = list()
+            
+            if WILD_CARD in self.dfa.alphabet:
+                for initial, s in current_states:
+                    t = self.dfa.get_transition(s, WILD_CARD)
+                    if not t: continue
+                    new_states.append((initial, t))
+                    if self.dfa.contains_final(t):
+                        yield (initial, i, text[initial:i+1])
+
             if c in self.dfa.alphabet:
                 for initial, s in current_states:
                     t = self.dfa.get_transition(s, c)
@@ -95,6 +105,7 @@ class RegularExpression:
                     new_states.append((initial, t))
                     if self.dfa.contains_final(t):
                         yield (initial, i, text[initial:i+1])
+                        
             current_states = new_states
 
 
