@@ -89,19 +89,13 @@ class RegularExpression:
         for i, c in enumerate(text):
             current_states.append((i, {self.dfa.initial_state}))
             new_states = list()
-            
-            if WILD_CARD in self.dfa.alphabet:
-                for initial, s in current_states:
-                    t = self.dfa.get_transition(s, WILD_CARD)
-                    if not t: continue
-                    new_states.append((initial, t))
-                    if self.dfa.contains_final(t):
-                        yield (initial, i, text[initial:i+1])
-
-            if c in self.dfa.alphabet:
+            wild_found = False
+            for c in (WILD_CARD, c):
+                if c not in self.dfa.alphabet or wild_found: continue
                 for initial, s in current_states:
                     t = self.dfa.get_transition(s, c)
                     if not t: continue
+                    wild_found = True
                     new_states.append((initial, t))
                     if self.dfa.contains_final(t):
                         yield (initial, i, text[initial:i+1])
@@ -110,5 +104,5 @@ class RegularExpression:
 
 
 if __name__ == '__main__':
-    r = RegularExpression("a*")
-    print list(r.search("abaabaada"))
+    r = RegularExpression("a.e")
+    print list(r.search("ade"))
