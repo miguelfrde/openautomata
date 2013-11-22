@@ -2,7 +2,6 @@
 
 from collections import defaultdict
 from functools import wraps
-from jinja2 import Environment, FileSystemLoader
 import copy
 
 EPSILON = '&'
@@ -76,16 +75,6 @@ class Automata:
     def is_initial(self, state):
         "Checks wether an state is initial"
         return state == self.initial_state
-
-    def get_transition_html(self):
-        "Returns an html table of the transition function"
-        env = Environment(loader=FileSystemLoader('.'))
-        template = env.get_template('transition_table.html')
-        return template.render( alphabet = sorted(self.alphabet),
-                                states   = sorted(self.states),
-                                transition = self.transition,
-                                final_states = self.final_states,
-                                initial = self.initial_state)
 
     def contains_final(self, states):
         "Check if any state in states is a final state"
