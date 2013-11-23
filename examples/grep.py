@@ -9,6 +9,13 @@ from openautomata.regex import RegularExpression, SYMBOLS
 ABOUT =  """GREP like application that uses minimized Deterministic Finite Automatas
             and finds matches in a set of files"""
 
+try: 
+    import colorama 
+    colorama.init() 
+except:
+    if os.name == 'nt': 
+        print "WARNING: Matches won't be highlighted, colorama is needed" 
+        print "Run: pip install colorama"
 
 def get_current_dir_files():
     return [f for f in os.listdir(os.curdir) if os.path.isfile(f)]
