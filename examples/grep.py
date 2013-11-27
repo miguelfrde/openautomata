@@ -5,6 +5,13 @@ from texttable import Texttable
 from termcolor import colored
 from openautomata.regex import RegularExpression, SYMBOLS
 
+try:
+    import colorama
+    colorama.init()
+except:
+    if os.name == 'nt':
+        print "WARNING: Matches won't be highlighted, colorama is needed"
+        print "Run: pip install colorama"
 
 ABOUT =  """GREP like application that uses minimized Deterministic Finite Automatas
             and finds matches in a set of files"""
@@ -54,12 +61,17 @@ class Grep:
             return
         q = Queue()
         processes = list()
+        kf = 0
         for fname in self.files:
-            print "Searching file", fname
-            processes.append(Process(target=search_in_file,
+            if os.path.exists(fname):
+                print "Searching file", fname
+                processes.append(Process(target=search_in_file,
                                      args=(fname, self.regex, q)))
-            processes[-1].start()
-        for _ in xrange(len(self.files)):
+                processes[-1].start()
+            else:
+                kf += 1
+                print "ERROR: File %s doesn't exist" % fname
+        for _ in xrange(len(self.files) - kf):
             self.results.append(q.get())
         for p in processes:
             p.join()
