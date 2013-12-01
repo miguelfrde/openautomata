@@ -1,4 +1,4 @@
-import os
+import os, shutil
 from setuptools import setup
 
 with open('README.md') as f:
@@ -23,3 +23,7 @@ setup(
         "License :: OSI Approved :: MIT License",
     ],
 )
+
+shutil.rmtree("dist/")
+shutil.rmtree("build/")
+shutil.rmtree("openautomata.egg-info/")
