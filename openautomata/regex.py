@@ -69,7 +69,7 @@ class RegularExpression:
         return nfa
 
     def __str__(self):
-        return self.regex
+        return self.regex[1:-1]
 
     def matches(self, text):
         "Match the regular expression against the text"
