@@ -1,8 +1,12 @@
 
+# Standard libraries
 import os, sys, argparse, collections
 from multiprocessing import Process, Queue
+
+# Dependencies
 from texttable import Texttable
 from termcolor import colored
+from jinja2 import Environment, FileSystemLoader
 from openautomata.regex import RegularExpression, SYMBOLS
 
 try:
@@ -16,13 +20,8 @@ except:
 ABOUT =  """GREP like application that uses minimized Deterministic Finite Automatas
             and finds matches in a set of files"""
 
-try: 
-    import colorama 
-    colorama.init() 
-except:
-    if os.name == 'nt': 
-        print "WARNING: Matches won't be highlighted, colorama is needed" 
-        print "Run: pip install colorama"
+env = Environment(loader=FileSystemLoader('.'))
+
 
 def get_current_dir_files():
     return [f for f in os.listdir(os.curdir) if os.path.isfile(f)]
@@ -30,17 +29,16 @@ def get_current_dir_files():
 
 def search_in_file(fname, regex, queue):
     with open(fname, 'r') as f:
-        text = f.read().split('\n')
+        text = f.read()
+        if str(regex) in ('.*',  '.+', '(.)+', '(.)*', '(.*)', '(.+)', '((.)*)', '((.)+)'):
+            queue.put((fname, ((0, '', text, ''),),))
+            return
+        text = text.split('\n')
         results_text = list()
         for line_index, line in enumerate(text):
             for i, j, _ in regex.search(line):
-                l = line[0:i]
-                c = colored(line[i:j+1], 'red', attrs=['bold', 'underline'])
                 r = line[j+1:] if j + 1 != len(line) else ''
-                try: results_text.append((line_index, l + c + r, l + line[i:j+1] + r))
-                except Exception:
-                    print l, c, r, line[i:j+1]
-                    exit()
+                results_text.append((line_index, line[0:i], line[i:j+1], r))
         queue.put((fname, tuple(results_text)))
 
 
@@ -57,7 +55,6 @@ class Grep:
     
     def search(self):
         if self.results:
-            if print_results: self.print_results()
             return
         q = Queue()
         processes = list()
@@ -81,20 +78,17 @@ class Grep:
             return 'Transition table:\n' + self.table.draw() + '\n'
         return ''
 
-    def print_table(self, out=sys.stdout):
-        print >>out, self.get_table()
+    def print_table(self):
+        print self.get_table()
 
-    def print_results(self, out=sys.stdout):
-        stdout = out == sys.stdout
-        print >>out, "Search results:"
+    def print_results(self):
+        print "Search results:"
         none = True
         for fname, results in self.results:
-            for i, r1, r2 in results:
+            for i, l, c, r in results:
                 none = False
                 f = fname + ':%d> ' % i
-                if stdout: print >>out, f + r1
-                else: print >>out, f + r2
-        if not stdout: out.close()
+                print f + l + colored(c, 'red', attrs=['bold', 'underline']) + r
         if none: print "None"
 
     def create_table(self):
@@ -112,12 +106,28 @@ class Grep:
             self.table.add_row(['%s q_%d' % (get_char(s), s)] + \
                 [trans(s, a)[0]  if trans(s, a) else '-' for a in alphabet])
 
+    def save_automata_html(self):
+        template = env.get_template('transition_table.html')
+        with open('outputt.html', 'w') as f:
+            f.write(template.render(alphabet = sorted(self.regex.dfa.alphabet),
+                                    states   = sorted(self.regex.dfa.states),
+                                    transition = self.regex.dfa.transition,
+                                    final_states = self.regex.dfa.final_states,
+                                    initial = self.regex.dfa.initial_state))
+
+    def save_results_html(self):
+        template = env.get_template('results.html')
+        with open('output.html', 'w') as f:
+            f.write(template.render(results=self.results, regex=self.regex))
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=ABOUT)
-    parser.add_argument('regex',
+    parser.add_argument('-e',
                         metavar='REGEX',
                         help='Regular expression. Symbols: ' + ', '.join(SYMBOLS),
-                        type=str)
+                        type=str,
+                        dest='regex')
     parser.add_argument('files',
                         metavar='FILES',
                         help="""Files to search the pattern on. 
@@ -146,8 +156,6 @@ if __name__ == '__main__':
     grep.print_results()
     print
     if args.save_output:
-        with open('output', 'w') as f:
-            grep.print_results(out=f)
+        grep.save_results_html()
     if args.save_automata:
-        with open('outputt', 'w') as f:
-            grep.print_table(out=f)
+        grep.save_automata_html()

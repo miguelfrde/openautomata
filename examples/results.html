@@ -1,0 +1,17 @@
+<h1>Results: {{ regex }}</h1>
+
+{% for fname, results_file in results %}
+
+	<h2>{{ fname }}</h2>
+
+	<div style="margin-left: 30px">
+		{% for i, l, c, r in results_file %}
+			<b><i>{{ i }}:</i></b>
+			{{ l|replace('\n', '<br>')}}
+			<b>{{ c|replace ('\n', '<br>') }}</b>
+			{{ r|replace ('\n', '<br>') }}
+			<br>
+		{% endfor %}
+	</div>
+
+{% endfor %}
