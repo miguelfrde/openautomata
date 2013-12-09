@@ -1,5 +1,7 @@
 <h1>Results: {{ regex }}</h1>
 
+<p>Total matches: <b>{{ total }}</b></p>
+
 {% for fname, results_file in results %}
 
 	<h2>{{ fname }}</h2>
@@ -13,5 +15,7 @@
 			<br>
 		{% endfor %}
 	</div>
+
+
 
 {% endfor %}

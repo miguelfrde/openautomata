@@ -49,6 +49,7 @@ class Grep:
         self.regex = RegularExpression(args.regex)
         self.dfa = self.regex.dfa
         self.results = list()
+        self.total = 0
         if args.show_automata or args.save_automata:
             self.create_table()
         else: self.table = None
@@ -70,6 +71,7 @@ class Grep:
                 print "ERROR: File %s doesn't exist" % fname
         for _ in xrange(len(self.files) - kf):
             self.results.append(q.get())
+            self.total += len(self.results[-1][1])
         for p in processes:
             p.join()
 
@@ -90,6 +92,8 @@ class Grep:
                 f = fname + ':%d> ' % i
                 print f + l + colored(c, 'red', attrs=['bold', 'underline']) + r
         if none: print "None"
+        print
+        print "Matches found:", self.total
 
     def create_table(self):
         alphabet = list(self.dfa.alphabet)
@@ -118,10 +122,12 @@ class Grep:
     def save_results_html(self):
         template = env.get_template('results.html')
         with open('output.html', 'w') as f:
-            f.write(template.render(results=self.results, regex=self.regex))
+            f.write(template.render(results=self.results,
+                                    regex=self.regex,
+                                    total=self.total))
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description=ABOUT)
     parser.add_argument('-e',
                         metavar='REGEX',
@@ -149,6 +155,7 @@ if __name__ == '__main__':
                         dest='save_automata')
 
     args = parser.parse_args()
+    if not args.regex: exit("ERROR: no regex provided")
     grep = Grep(args)
     print
     if args.show_automata: grep.print_table()
@@ -159,3 +166,7 @@ if __name__ == '__main__':
         grep.save_results_html()
     if args.save_automata:
         grep.save_automata_html()
+
+
+if __name__ == '__main__':
+    main()
